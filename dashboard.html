@@ -19,29 +19,43 @@ body {
     display: flex;
     height: 100vh;
 }
+
+/* --- Sidebar --- */
 .sidebar {
-    width: 70px;
+    width: 200px;
     background: #111827;
     display: flex;
     flex-direction: column;
-    align-items: center;
     padding-top: 20px;
     box-shadow: 2px 0 10px #00f0ff55;
+    transition: transform 0.3s ease-in-out;
+    z-index: 1000;
 }
 .sidebar button {
     background: none;
     border: none;
-    color: #777;
-    font-size: 24px;
-    margin: 20px 0;
+    color: #bbb;
+    font-size: 18px;
+    margin: 15px 0;
     cursor: pointer;
     transition: 0.3s;
     text-shadow: 0 0 5px #00f0ff33;
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    width: 100%;
+    text-align: left;
+}
+.sidebar button i {
+    margin-right: 12px;
+    font-size: 20px;
 }
 .sidebar button:hover, .sidebar button.active {
     color: #0ff;
     text-shadow: 0 0 15px #0ff;
 }
+
+/* --- Contenido --- */
 .content {
     flex: 1;
     padding: 20px;
@@ -51,7 +65,7 @@ body {
 .logo {
     position: absolute;
     top: 10px;
-    left: 90px;
+    left: 20px;
     font-size: 22px;
     color: #0ff;
     font-weight: bold;
@@ -68,7 +82,7 @@ body {
 canvas { background: #0a0f1e; border-radius: 10px; }
 #speedChart { box-shadow: 0 0 20px #0ff55; }
 
-/* Botón fullscreen futurista */
+/* Botón fullscreen */
 #fullscreenBtn {
     position: absolute;
     top: 10px;
@@ -89,17 +103,56 @@ canvas { background: #0a0f1e; border-radius: 10px; }
     color: #111827;
     box-shadow: 0 0 20px #0ff;
 }
+
+/* Botón hamburguesa */
+#menuToggle {
+    display: none;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 26px;
+    color: #0ff;
+    background: none;
+    border: none;
+    cursor: pointer;
+    z-index: 1100;
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        transform: translateX(-100%);
+    }
+    .sidebar.show {
+        transform: translateX(0);
+    }
+    #menuToggle {
+        display: block;
+    }
+    .logo {
+        left: 60px;
+    }
+}
 </style>
 </head>
 <body>
 
-<div class="sidebar">
-    <button id="btnSpeed" class="active"><i class="fas fa-tachometer-alt">DASHBOARD</i></button>
-    <button id="btnChart"><i class="fas fa-chart-line">ESTADISTICA</i></button>
-    <button id="btnConfig"><i class="fas fa-cog">CONFIGURACION</i></button>
-    <button id="btnInfo"><i class="fas fa-info-circle">INFO</i></button>
+<!-- Botón hamburguesa -->
+<button id="menuToggle"><i class="fas fa-bars"></i></button>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+    <button id="btnSpeed" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
+    <button id="btnChart"><i class="fas fa-chart-line"></i> Estadisticas</button>
+    <button id="btnConfig"><i class="fas fa-cog"></i> Configuración</button>
+    <button id="btnInfo"><i class="fas fa-info-circle"></i> Información</button>
 </div>
 
+<!-- Contenido -->
 <div class="content">
     <div class="logo">FDM Racing</div>
     <button id="fullscreenBtn"><i class="fas fa-expand"></i> Fullscreen</button>
@@ -141,6 +194,11 @@ Object.keys(sections).forEach(btnId=>{
         document.getElementById(btnId).classList.add("active");
         Object.values(sections).forEach(secId=>document.getElementById(secId).classList.add("hidden"));
         document.getElementById(sections[btnId]).classList.remove("hidden");
+
+        // cerrar menú en móvil al seleccionar
+        if(window.innerWidth <= 768){
+            document.getElementById("sidebar").classList.remove("show");
+        }
     });
 });
 
@@ -155,7 +213,12 @@ document.getElementById('fullscreenBtn').addEventListener('click', ()=>{
     }
 });
 
-// Función para dibujar gauge neón
+// Toggle menú en móvil
+document.getElementById("menuToggle").addEventListener("click", ()=>{
+    document.getElementById("sidebar").classList.toggle("show");
+});
+
+// Función para dibujar gauge
 function drawGauge(canvasId, value, maxValue, label) {
     const canvas = document.getElementById(canvasId);
     const ctx = canvas.getContext('2d');
@@ -164,14 +227,12 @@ function drawGauge(canvasId, value, maxValue, label) {
     ctx.save();
     ctx.translate(canvas.width/2, canvas.height/2);
 
-    // Fondo
     ctx.beginPath();
     ctx.arc(0,0,radius,0,Math.PI*1.5);
     ctx.strokeStyle = '#111';
     ctx.lineWidth = 20;
     ctx.stroke();
 
-    // Gradiente neón
     let endAngle = (value / maxValue) * (Math.PI*1.5);
     ctx.beginPath();
     ctx.arc(0,0,radius,0,endAngle);
@@ -184,14 +245,12 @@ function drawGauge(canvasId, value, maxValue, label) {
     ctx.shadowColor = '#00f0ff';
     ctx.stroke();
 
-    // Valor central
     ctx.fillStyle = '#0ff';
     ctx.font = 'bold 28px Orbitron';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(value,0,0);
 
-    // Label
     ctx.font = '16px Orbitron';
     ctx.fillText(label,0,35);
 
@@ -222,7 +281,7 @@ const speedChart = new Chart(ctxChart,{
     }
 });
 
-// Simulación de velocidad y RPM
+// Simulación
 let time=0;
 setInterval(()=>{
     let speed=Math.floor(Math.random()*240);
@@ -239,11 +298,15 @@ setInterval(()=>{
     speedChart.update();
 },1000);
 
-// Fecha en info
 document.getElementById('fecha').innerText=new Date().toLocaleDateString();
 </script>
 
 </body>
 </html>
+
+
+</body>
+</html>
+
 
 
